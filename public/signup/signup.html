@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新規登録 - ChatGPT風サイドバー</title>
+    <link rel="stylesheet" href="../style.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <!-- 新規登録画面 -->
+    <div class="login-container" id="signupContainer">
+        <div class="login-box">
+            <h1>新規登録</h1>
+            <p class="login-subtitle">アカウントを作成しましょう</p>
+            
+            <div class="login-methods">
+                <button class="login-btn google-btn" id="googleSignupBtn">
+                    <span class="btn-icon">G</span>
+                    Googleで登録
+                </button>
+                
+                <div class="divider">
+                    <span>または</span>
+                </div>
+                
+                <form id="emailSignupForm" class="email-form">
+                    <input type="text" id="displayNameInput" placeholder="ユーザー名" required />
+                    <input type="email" id="emailSignupInput" placeholder="メールアドレス" required />
+                    <input type="password" id="passwordSignupInput" placeholder="パスワード（6文字以上）" required minlength="6" />
+                    <input type="password" id="passwordConfirmInput" placeholder="パスワード（確認）" required minlength="6" />
+                    
+                    <button type="submit" class="login-btn email-btn">アカウント作成</button>
+                </form>
+                
+                <p class="signup-link">
+                    すでにアカウントをお持ちですか？ 
+                    <a href="../index.html">ログイン</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="firebase-config.js"></script>
+    <script src="signup.js"></script>
+</body>
+</html>

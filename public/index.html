@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+</head>
+<body>
+
+
+    <!-- ログイン画面 -->
+    <div class="login-container" id="loginContainer">
+        <div class="login-box">
+            <h1>ChatGPT風インターフェース</h1>
+            <p class="login-subtitle">ログインして始めましょう</p>
+            
+            <div class="login-methods">
+                <button class="login-btn google-btn" id="googleLoginBtn">
+                    <span class="btn-icon">G</span>
+                    Googleでログイン
+                </button>
+                
+                <div class="divider">
+                    <span>または</span>
+                </div>
+                
+                <form id="emailLoginForm" class="email-form">
+                    <input type="email" id="emailInput" placeholder="メールアドレス" required />
+                    <input type="password" id="passwordInput" placeholder="パスワード" required />
+                    <button type="submit" class="login-btn email-btn">ログイン</button>
+                </form>
+                
+                <p class="signup-link">
+                    アカウントをお持ちでないですか？ 
+                    <a href="./signup/signup.html" id="showSignupLink">新規登録</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+
+    <div class="container" id="mainContainer" style="display: none;">
+        <!-- サイドバー -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <button class="new-chat-btn" id="newChatBtn">
+                    <span class="icon">+</span>
+                    新しいチャット
+                </button>
+            </div>
+            
+            <div class="chat-history" id="chatHistory">
+                <!-- チャット履歴がここに動的に追加されます -->
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="user-profile" id="userProfile">
+                    <div class="avatar" id="userAvatar">U</div>
+                    <div class="user-info">
+                        <span class="username" id="username">ユーザー</span>
+                        <button class="logout-btn" id="logoutBtn">ログアウト</button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+
+
+        <!-- メインコンテンツ -->
+        <main class="main-content">
+
+            <div class="toggle-sidebar" id="toggleSidebar">
+                <span class="hamburger">☰</span>
+            </div>
+
+
+            <!-- <nav class="navbar">
+                <div class="nav-brand">ロゴ</div>
+                <ul class="nav-menu">
+                   <li><a href="#home">ホーム</a></li>
+                   <li><a href="#about">概要</a></li>
+                   <li><a href="#service">サービス</a></li>
+                  <li><a href="#contact">お問い合わせ</a></li>
+                </ul>
+           </nav> -->
+   
+           <!-- キャンバス（ドラッグ可能なエリア） -->
+           <div id="canvas">
+               <div class="searchbox">
+                   <input type="text" id="searchInput">
+               </div>
+           </div>
+        </main>
+
+
+   <script src="./signup/firebase-config.js"></script>
+   <script src="index.js"></script>
+</body>
+</html>
