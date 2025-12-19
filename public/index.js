@@ -423,11 +423,10 @@ function updateExistingSmallCircles() {
     });
 }
 
-// 円のクリックイベントを再帰的にアタッチする関数
+// 円のクリックイベントを再帰的にアタッチする関数 - 完全修正版
 function attachCircleClickHandler(circle, line, initialAngle, initialParentX, initialParentY, parentCircle = null) {
     circle.addEventListener('click', async function (e) {
         console.log("clicked");
-        console.log("Circle clicked, triggering canvas size update..."); // ★ 追加
         e.stopPropagation();
         if (this.dataset.clicked === 'true') return;
 
@@ -547,6 +546,7 @@ function attachCircleClickHandler(circle, line, initialAngle, initialParentX, in
             angle = targetAngle;
         }
 
+        // テキストのフェードアウト
         const textElement = clickedCircle.querySelector('span');
         if (textElement) {
             textElement.style.transition = 'opacity 0.3s ease';
@@ -582,9 +582,19 @@ function attachCircleClickHandler(circle, line, initialAngle, initialParentX, in
             const newX = Math.cos(angle) * extendedRadius;
             const newY = Math.sin(angle) * extendedRadius;
 
+            const finalX = parentX + newX;
+            const finalY = parentY + newY;
+
+            console.log('Circle expansion:', {
+                parent: { x: parentX, y: parentY },
+                angle: angle * 180 / Math.PI,
+                offset: { x: newX, y: newY },
+                final: { x: finalX, y: finalY }
+            });
+
             clickedCircle.style.transition = 'left 0.5s ease, top 0.5s ease, width 0.5s ease, height 0.5s ease, background-color 0.5s ease';
-            clickedCircle.style.left = `calc(50% + ${parentX + newX}px)`;
-            clickedCircle.style.top = `calc(50% + 300px + ${parentY + newY}px)`;
+            clickedCircle.style.left = `calc(50% + ${finalX}px)`;
+            clickedCircle.style.top = `calc(50% + 300px + ${finalY}px)`;
             clickedCircle.style.width = '150px';
             clickedCircle.style.height = '150px';
             clickedCircle.style.backgroundColor = '#ff69b4';
@@ -597,37 +607,26 @@ function attachCircleClickHandler(circle, line, initialAngle, initialParentX, in
             }
 
             setTimeout(() => {
-            updateExistingSmallCircles();
-            
-                // ★ 円の拡大が完了した後にサイズチェック
-                setTimeout(() => {
-                    console.log("Circle expansion complete, checking canvas size...");
-                    updateCanvasSize();
-                }, 100);
+                updateExistingSmallCircles();
             }, 550);
-
-            setTimeout(() => {
-                descriptionText.style.transition = 'opacity 0.3s ease';
-                descriptionText.style.opacity = '1';
-            }, 500);
-
+            
             setTimeout(() => {
                 const checkAndCreateSubCircles = () => {
                     const subKeywords = JSON.parse(clickedCircle.dataset.subKeywords || '[]');
                     if (subKeywords.length > 0) {
-                        createSubCircles(clickedCircle, parentX + newX, parentY + newY);
+                        createSubCircles(clickedCircle, finalX, finalY);
                     } else {
                         console.log('Waiting for sub-keywords data...');
                         setTimeout(checkAndCreateSubCircles, 500);
                     }
                 };
                 checkAndCreateSubCircles();
-            }, 1000);
+            }, 550);
         }, 300);
     });
-}
-
-// サブキーワードの円を作成する関数
+}  
+    
+//サブキーワードの円を作成する関数
 function createSubCircles(parentCircle, parentX, parentY) {
     try {
         const subKeywords = JSON.parse(parentCircle.dataset.subKeywords || '[]');
@@ -700,7 +699,6 @@ function createSubCircles(parentCircle, parentX, parentY) {
             subCircle.style.overflow = 'hidden';
             subCircle.style.cursor = 'pointer';
 
-            console.log("subindex", subIndex);
             let subText;
 
             if (subIndex === 2) {
@@ -920,12 +918,6 @@ const toggleSidebarBtn = document.getElementById('toggleSidebar');
 let sidebarOpen = true;
 let currentChatId = null;
 let chatHistory = [];
-// キャンバスの最小サイズ
-const MIN_CANVAS_WIDTH = 10;
-const MIN_CANVAS_HEIGHT = 10;
-
-// キャンバスのパディング（余白）
-const CANVAS_PADDING = 2;
 
 // ローカルストレージからチャット履歴を読み込み
 function loadChatHistory() {
@@ -960,25 +952,13 @@ function init() {
     setupEventListeners();
     renderChatHistory();
     
-    // 既存のチャットがない場合は新規作成
     if (chatHistory.length === 0) {
         createNewChat();
     } else {
-        // 最後のチャットを開く
         currentChatId = chatHistory[0].id;
         loadChat(currentChatId);
     }
-    
-    // キャンバスサイズの自動調整を開始
-    startCanvasObserver();
-    
-    // 初回のサイズ調整
-    setTimeout(() => {
-        updateCanvasSize();
-        logCanvasInfo(); // 初回のログ出力
-    }, 500);
 }
-
 
 // イベントリスナーの設定
 function setupEventListeners() {
@@ -993,14 +973,11 @@ function saveCurrentCanvasState() {
     const chat = chatHistory.find(c => c.id === currentChatId);
     if (!chat) return;
     
-    // キャンバスの全ての要素を保存（アニメーションなしクラスも含む）
     const circles = Array.from(document.querySelectorAll('.keyword-circle, .new-circle, .circle-no-animation')).map(circle => {
-        // 計算済みスタイルから実際のサイズを取得
         const computedStyle = window.getComputedStyle(circle);
         const actualWidth = computedStyle.width;
         const actualHeight = computedStyle.height;
         
-        // インラインスタイルにサイズが設定されていない場合は追加
         let styleText = circle.style.cssText;
         if (!styleText.includes('width') && actualWidth && actualWidth !== '0px') {
             styleText += `width: ${actualWidth};`;
@@ -1018,11 +995,9 @@ function saveCurrentCanvasState() {
     });
     
     const lines = Array.from(document.querySelectorAll('.keyword-line, .line, .line-no-animation')).map(line => {
-        // 計算済みスタイルから実際の高さを取得
         const computedStyle = window.getComputedStyle(line);
         const actualHeight = computedStyle.height;
         
-        // インラインスタイルに高さが設定されていない場合は追加
         let styleText = line.style.cssText;
         if (!styleText.includes('height') && actualHeight && actualHeight !== '0px') {
             styleText += `height: ${actualHeight};`;
@@ -1056,21 +1031,17 @@ function saveCurrentCanvasState() {
 
 // キャンバスをクリア
 function clearCanvas() {
-    // 全ての円と線を削除（アニメーションなしクラスも含む）
     document.querySelectorAll('.keyword-circle, .new-circle, .circle-no-animation, .keyword-line, .line, .line-no-animation').forEach(el => el.remove());
     
-    // サーチボックスを初期状態に
     searchbox.style.width = '300px';
     searchbox.style.height = '300px';
     searchbox.innerHTML = '<input type="text" id="searchInput">';
     
-    // キャンバスのトランスフォームをリセット
     currentTranslateX = 0;
     currentTranslateY = 0;
     currentScale = 1;
     canvas.style.transform = `translate(0px, 0px) scale(1)`;
     
-    // インプットのイベントリスナーを再設定
     const newSearchInput = document.getElementById('searchInput');
     if (newSearchInput) {
         setupSearchInputListener(newSearchInput);
@@ -1088,7 +1059,6 @@ function setupSearchInputListener(input) {
                 return;
             }
 
-            // チャットのタイトルを更新
             updateChatTitle(currentChatId, userInput);
 
             input.style.display = 'none';
@@ -1181,7 +1151,6 @@ function setupSearchInputListener(input) {
 
                     setTimeout(function () {
                         canvas.style.transition = '';
-                        // 保存
                         saveCurrentCanvasState();
                     }, 1000);
                 }, 1500);
@@ -1194,205 +1163,11 @@ function setupSearchInputListener(input) {
     });
 }
 
-
-// 全ての円の座標を取得して、キャンバスサイズを計算
-function calculateRequiredCanvasSize() {
-    const circles = document.querySelectorAll('.keyword-circle, .new-circle, .circle-no-animation');
-    const searchBox = document.querySelector('.searchbox');
-    
-    let minX = 0, maxX = 0, minY = 0, maxY = 0;
-    let hasCircles = false;
-    
-    // サーチボックスの位置を基準に追加
-    if (searchBox) {
-        const rect = searchBox.getBoundingClientRect();
-        const searchBoxWidth = parseFloat(window.getComputedStyle(searchBox).width) || 300;
-        const searchBoxHeight = parseFloat(window.getComputedStyle(searchBox).height) || 300;
-        const searchBoxRadius = Math.max(searchBoxWidth, searchBoxHeight) / 2;
-        
-        // サーチボックスは中央(0, 0)にあると仮定
-        minX = Math.min(minX, -searchBoxRadius);
-        maxX = Math.max(maxX, searchBoxRadius);
-        minY = Math.min(minY, -searchBoxRadius);
-        maxY = Math.max(maxY, searchBoxRadius);
-    }
-    
-    // 全ての円の位置をチェック
-    circles.forEach(circle => {
-        hasCircles = true;
-        const pos = getCirclePosition(circle);
-        
-        // 円の中心座標と半径を使って範囲を計算
-        minX = Math.min(minX, pos.x - pos.radius);
-        maxX = Math.max(maxX, pos.x + pos.radius);
-        minY = Math.min(minY, pos.y - pos.radius);
-        maxY = Math.max(maxY, pos.y + pos.radius);
-    });
-    
-    // 必要なキャンバスサイズを計算
-    // キャンバスの中心は50%の位置なので、最も遠い点までの距離の2倍 + パディング
-    const requiredWidth = Math.max(
-        Math.abs(minX) * 2 + CANVAS_PADDING,
-        Math.abs(maxX) * 2 + CANVAS_PADDING,
-        MIN_CANVAS_WIDTH
-    );
-    
-    const requiredHeight = Math.max(
-        Math.abs(minY) * 2 + CANVAS_PADDING,
-        Math.abs(maxY) * 2 + CANVAS_PADDING,
-        MIN_CANVAS_HEIGHT
-    );
-    
-    return {
-        width: Math.ceil(requiredWidth),
-        height: Math.ceil(requiredHeight),
-        bounds: { minX, maxX, minY, maxY },
-        hasCircles
-    };
-}
-// キャンバスサイズを更新
-function updateCanvasSize() {
-    const size = calculateRequiredCanvasSize();
-    
-    const currentWidth = parseInt(canvas.style.width) || MIN_CANVAS_WIDTH;
-    const currentHeight = parseInt(canvas.style.height) || MIN_CANVAS_HEIGHT;
-    
-    const newWidth = Math.max(size.width, currentWidth);
-    const newHeight = Math.max(size.height, currentHeight);
-    
-    // ★ サイズが変わらなくてもログを出力するように変更
-    console.log(`Canvas size check: current=${currentWidth}x${currentHeight}, required=${size.width}x${size.height}`);
-    
-    if (newWidth !== currentWidth || newHeight !== currentHeight) {
-        canvas.style.width = newWidth + 'px';
-        canvas.style.height = newHeight + 'px';
-        
-        console.log(`Canvas size updated: ${newWidth}x${newHeight}`);
-        console.log(`Bounds: X(${size.bounds.minX.toFixed(0)} to ${size.bounds.maxX.toFixed(0)}), Y(${size.bounds.minY.toFixed(0)} to ${size.bounds.maxY.toFixed(0)})`);
-    }
-    
-    // ★ サイズ変更の有無に関わらず、常にログを出力
-    logCanvasInfo();
-    
-    return size;
-}
-
-// キャンバスサイズを定期的に監視・更新
-let canvasSizeCheckInterval = null;
-
-function startCanvasSizeMonitoring() {
-    // 既存のインターバルをクリア
-    if (canvasSizeCheckInterval) {
-        clearInterval(canvasSizeCheckInterval);
-    }
-    
-    // 初回実行
-    updateCanvasSize();
-    
-    // 1秒ごとにチェック
-    canvasSizeCheckInterval = setInterval(() => {
-        updateCanvasSize();
-    }, 1000);
-}
-
-function stopCanvasSizeMonitoring() {
-    if (canvasSizeCheckInterval) {
-        clearInterval(canvasSizeCheckInterval);
-        canvasSizeCheckInterval = null;
-    }
-}
-
-// MutationObserverを使ってキャンバスの変更を監視（より効率的な方法）
-let canvasObserver = null;
-
-function startCanvasObserver() {
-    // 既存のオブザーバーを停止
-    if (canvasObserver) {
-        canvasObserver.disconnect();
-    }
-    
-    // 初回実行
-    updateCanvasSize();
-    
-    // 新しいオブザーバーを作成
-    canvasObserver = new MutationObserver((mutations) => {
-        // 円や線が追加・削除された場合に実行
-        let shouldUpdate = false;
-        
-        mutations.forEach(mutation => {
-            if (mutation.type === 'childList') {
-                mutation.addedNodes.forEach(node => {
-                    if (node.classList && (
-                        node.classList.contains('keyword-circle') ||
-                        node.classList.contains('new-circle') ||
-                        node.classList.contains('circle-no-animation')
-                    )) {
-                        shouldUpdate = true;
-                    }
-                });
-            }
-            
-            // スタイル変更も監視（円の位置が変わった場合）
-            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-                if (mutation.target.classList && (
-                    mutation.target.classList.contains('keyword-circle') ||
-                    mutation.target.classList.contains('new-circle') ||
-                    mutation.target.classList.contains('circle-no-animation')
-                )) {
-                    shouldUpdate = true;
-                }
-            }
-        });
-        
-        if (shouldUpdate) {
-            // デバウンス処理（連続した変更を1回にまとめる）
-            if (updateCanvasSize.timeout) {
-                clearTimeout(updateCanvasSize.timeout);
-            }
-            updateCanvasSize.timeout = setTimeout(() => {
-                updateCanvasSize();
-            }, 300);
-        }
-    });
-    
-    // キャンバスの変更を監視
-    canvasObserver.observe(canvas, {
-        childList: true,      // 子要素の追加・削除を監視
-        attributes: true,     // 属性の変更を監視
-        subtree: true,        // 子孫要素も監視
-        attributeFilter: ['style']  // styleのみ監視
-    });
-}
-
-function stopCanvasObserver() {
-    if (canvasObserver) {
-        canvasObserver.disconnect();
-        canvasObserver = null;
-    }
-}
-
-// デバッグ用：現在のキャンバス情報を表示
-function logCanvasInfo() {
-    const size = calculateRequiredCanvasSize();
-    console.log('=== Canvas Info ===');
-    console.log('Required Size:', size.width, 'x', size.height);
-    console.log('Bounds:', size.bounds);
-    console.log('Has Circles:', size.hasCircles);
-    console.log('Current Canvas Style:', {
-        width: canvas.style.width,
-        height: canvas.style.height,
-        transform: canvas.style.transform
-    });
-}
-
-
-
-
 // チャットタイトルを更新
 function updateChatTitle(chatId, title) {
     const chat = chatHistory.find(c => c.id === chatId);
     if (chat) {
-        chat.title = title.substring(0, 30); // 30文字まで
+        chat.title = title.substring(0, 30);
         saveChatHistory();
         renderChatHistory();
     }
@@ -1400,7 +1175,6 @@ function updateChatTitle(chatId, title) {
 
 // 新しいチャットを作成
 function createNewChat() {
-    // 現在のキャンバス状態を保存
     if (currentChatId) {
         saveCurrentCanvasState();
     }
@@ -1419,13 +1193,11 @@ function createNewChat() {
     saveChatHistory();
     renderChatHistory();
     
-    // キャンバスをクリア
     clearCanvas();
 }
 
 // チャットを読み込み
 function loadChat(chatId) {
-    // 現在のキャンバス状態を保存
     if (currentChatId && currentChatId !== chatId) {
         saveCurrentCanvasState();
     }
@@ -1435,10 +1207,8 @@ function loadChat(chatId) {
     
     if (!chat) return;
     
-    // キャンバスをクリア
     clearCanvas();
     
-    // 保存されている状態があれば復元
     if (chat.canvasState) {
         restoreCanvasState(chat.canvasState);
     }
@@ -1448,7 +1218,6 @@ function loadChat(chatId) {
 
 // キャンバス状態を復元
 function restoreCanvasState(state) {
-    // サーチを復元
     if (state.searchbox) {
         searchbox.innerHTML = state.searchbox.innerHTML;
         searchbox.style.cssText = state.searchbox.style;
@@ -1459,30 +1228,23 @@ function restoreCanvasState(state) {
         }
     }
     
-    // 線を復元
     state.lines.forEach(lineData => {
         const line = document.createElement('div');
         
-        // まず元のクラスとスタイルを適用
         line.className = lineData.className;
         line.style.cssText = lineData.style;
         Object.keys(lineData.dataset).forEach(key => {
             line.dataset[key] = lineData.dataset[key];
         });
         
-        // アニメーションクラスを削除（復元時はアニメーション不要）
-        // スタイルを適用した後にクラスを変更
         if (line.classList.contains('line')) {
             line.classList.remove('line');
             line.classList.add('line-no-animation');
-            // アニメーションで設定されるheightが既にstyle.cssTextに含まれているため、
-            // クラス変更後も高さは維持される
         }
         
         canvas.appendChild(line);
     });
     
-    // 円を復元
     state.circles.forEach(circleData => {
         const circle = document.createElement('div');
         circle.className = circleData.className;
@@ -1492,7 +1254,6 @@ function restoreCanvasState(state) {
             circle.dataset[key] = circleData.dataset[key];
         });
         
-        // アニメーションクラスを削除（復元時はアニメーション不要）
         if (circle.classList.contains('new-circle')) {
             circle.classList.remove('new-circle');
             circle.classList.add('circle-no-animation');
@@ -1500,7 +1261,6 @@ function restoreCanvasState(state) {
         
         canvas.appendChild(circle);
         
-        // クリックハンドラーを再設定
         if (circle.classList.contains('keyword-circle')) {
             const lineId = circle.dataset.lineId;
             const line = document.querySelector(`[data-circle-id="${lineId}"]`);
@@ -1510,7 +1270,6 @@ function restoreCanvasState(state) {
                 parentCircle = document.querySelector(`[data-circle-id="${parentId}"]`);
             }
             
-            // 円の位置情報を取得
             const pos = getCirclePosition(circle);
             let parentX = 0, parentY = 0;
             if (parentCircle) {
@@ -1526,7 +1285,6 @@ function restoreCanvasState(state) {
         }
     });
     
-    // トランスフォームを復元
     if (state.transform) {
         currentTranslateX = state.transform.translateX;
         currentTranslateY = state.transform.translateY;
@@ -1573,8 +1331,8 @@ function renderChatHistory() {
 function deleteChat(chatId) {
     if (chatHistory.length === 1) {
         alert('新しいチャットを作成します');
-        createNewChat()
-        // return;
+        createNewChat();
+        return;
     }
     
     if (!confirm('このチャットを削除しますか？')) {
@@ -1585,7 +1343,6 @@ function deleteChat(chatId) {
     saveChatHistory();
     
     if (currentChatId === chatId) {
-        // 削除したチャットが現在のチャットなら、別のチャットを開く
         if (chatHistory.length > 0) {
             loadChat(chatHistory[0].id);
         }
@@ -1612,37 +1369,25 @@ function toggleSidebar() {
 
 toggleSidebarBtn.classList.add('sidebar-open');
 
-// 初期化を実行
 console.log("Initializing app...");
 init();
 
-window.addEventListener('wheel', function (e) {
-    e.preventDefault();
 
-    if (e.ctrlKey || e.metaKey) {
-        const zoomSpeed = 0.05;
-        const delta = e.deltaY > 0 ? -zoomSpeed : zoomSpeed;
-        const newScale = Math.max(0.1, Math.min(5, currentScale + delta));
+const centerButton = document.querySelector('.center-button');
+console.log("centerButton", centerButton);
 
-        const mouseX = e.clientX;
-        const mouseY = e.clientY;
+centerButton.addEventListener("click", function(){
+    // currentTranslateX = calc(50% + px);
+    currentTranslateY = 0;
+    currentScale = 1;
+    
 
-        const canvasX = (mouseX - currentTranslateX) / currentScale;
-        const canvasY = (mouseY - currentTranslateY) / currentScale;
+    // スムーズなアニメーション付きで移動
+    canvas.style.transition = 'transform 0.5s ease';
+    canvas.style.transform = `translate(50%, 50%) scale(1)`;
 
-        currentTranslateX = mouseX - canvasX * newScale;
-        currentTranslateY = mouseY - canvasY * newScale;
-
-        currentScale = newScale;
-
-        canvas.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
-    } else {
-        currentTranslateX -= e.deltaX;
-        currentTranslateY -= e.deltaY;
-
-        canvas.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
-        
-        // キャンバス境界チェック
-        checkCanvasBoundaries();
-    }
-}, { passive: false });
+    console.log("どうやらこれは動いてるっぽいすねーーーー");
+    setTimeout(() => {
+        canvas.style.transition = '';
+    }, 500);
+})
