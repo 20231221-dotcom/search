@@ -570,6 +570,10 @@ function attachCircleClickHandler(circle, line, initialAngle, initialParentX, in
             descriptionText.style.opacity = '0';
 
             clickedCircle.appendChild(descriptionText);
+            setTimeout(() => {
+                descriptionText.style.transition = 'opacity 0.3s ease';
+                descriptionText.style.opacity = '1';
+            }, 100);
 
             if (parentCircle) {
                 const parentPos = getCirclePosition(parentCircle);
@@ -598,6 +602,13 @@ function attachCircleClickHandler(circle, line, initialAngle, initialParentX, in
             clickedCircle.style.width = '150px';
             clickedCircle.style.height = '150px';
             clickedCircle.style.backgroundColor = '#ff69b4';
+
+            const clickedPos = getCirclePosition(clickedCircle);
+            focusCirclePosX = -clickedPos.x - 689.5;
+            focusCirclePosY = -clickedPos.y - 750;
+            setTimeout(() => {
+                focusMove()
+            }, 450);
 
             if (line) {
                 const extendedLength = Math.sqrt(newX * newX + newY * newY);
@@ -918,6 +929,10 @@ const toggleSidebarBtn = document.getElementById('toggleSidebar');
 let sidebarOpen = true;
 let currentChatId = null;
 let chatHistory = [];
+const viewportCenterX = window.innerWidth / 2;
+const viewportCenterY = window.innerHeight / 2;
+let focusCirclePosX = viewportCenterX - 1000;
+let focusCirclePosY = viewportCenterY - 1000;
 
 // ローカルストレージからチャット履歴を読み込み
 function loadChatHistory() {
@@ -1377,17 +1392,22 @@ const centerButton = document.querySelector('.center-button');
 console.log("centerButton", centerButton);
 
 centerButton.addEventListener("click", function(){
-    // currentTranslateX = calc(50% + px);
-    currentTranslateY = 0;
-    currentScale = 1;
-    
+    focusMove()
+});
 
+function focusMove() {
+    // キャンバスの初期位置（searchboxが画面中央にくる位置）に戻す
+    currentTranslateX = focusCirclePosX;
+    currentTranslateY = focusCirclePosY;
+    currentScale = 1;
+    console.log("currentTranslateX",viewportCenterX,viewportCenterY);
+    
     // スムーズなアニメーション付きで移動
     canvas.style.transition = 'transform 0.5s ease';
-    canvas.style.transform = `translate(50%, 50%) scale(1)`;
+    canvas.style.transform = `translate(${focusCirclePosX}px, ${focusCirclePosY}px) scale(${currentScale})`;
 
-    console.log("どうやらこれは動いてるっぽいすねーーーー");
+    console.log("キャンバスを中央にリセットしました", focusCirclePosX,focusCirclePosY);
     setTimeout(() => {
         canvas.style.transition = '';
     }, 500);
-})
+}
