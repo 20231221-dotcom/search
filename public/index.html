@@ -64,11 +64,16 @@
             </div>
             
             <div class="sidebar-footer">
+                    <div class="card-content">
+                        <div class="card-body">
+                            <button class="logout-btn">ログアウト</button> 
+                            <button class="setting-btn">設定</button> 
+                        </div>
+                    </div>
                 <div class="user-profile" id="userProfile">
                     <div class="avatar" id="userAvatar">U</div>
-                    <div class="user-info">
+                    <div class="user-info" onclick="toggleCard(this)">
                         <span class="username" id="username">ユーザー</span>
-                        <button class="logout-btn" id="logoutBtn">ログアウト</button>
                     </div>
                 </div>
             </div>

@@ -1411,3 +1411,33 @@ function focusMove() {
         canvas.style.transition = '';
     }, 500);
 }
+
+// カードの展開・折りたたみ機能（グローバルスコープに配置）
+window.toggleCard = function(header) {
+    const card = header.closest('.sidebar-footer');
+    const wasActive = card.classList.contains('active');
+    if (wasActive) {
+        card.classList.remove('active');
+    } else {
+        card.classList.add('active');
+    }
+}
+
+// ページ読み込み時の初期化
+document.addEventListener('DOMContentLoaded', function() {
+    // キーボードアクセシビリティのサポート
+    document.querySelectorAll('.card-header').forEach(header => {
+        header.setAttribute('tabindex', '0');
+        header.setAttribute('role', 'button');
+        header.setAttribute('aria-expanded', 'false');
+        
+        header.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleCard(this);
+                this.setAttribute('aria-expanded', 
+                    this.parentElement.classList.contains('active'));
+            }
+        });
+    });
+});
