@@ -215,18 +215,18 @@ h1 {
     font-weight: 500;
 }
 
-.logout-btn {
+.logout-btn, .setting-btn {
     background: none;
     border: none;
     color: #c5c5d2;
-    font-size: 12px;
+    font-size: 15px;
     cursor: pointer;
-    padding: 0;
+    padding: 10;
     text-align: left;
     transition: color 0.2s;
 }
 
-.logout-btn:hover {
+.logout-btn:hover, .setting-btn:hover {
     color: #ff6b6b;
 }
 
@@ -480,7 +480,9 @@ h1 {
 
 .card-body {
     display: flex;
-    padding: 2rem 2rem 0 2rem;  /* 上下のpaddingを逆に */
+    flex-direction: column; 
+    gap: 8px;  /* ボタン間の間隔 */
+    padding: 2rem 2rem 0 2rem;
     opacity: 0;
     transition: all 0.4s ease 0.1s;
 }
