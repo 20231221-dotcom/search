@@ -1,7 +1,7 @@
 // 認証状態の監視（既にログイン済みの場合はメインページへリダイレクト）
 auth.onAuthStateChanged((user) => {
-    if (user) {
-        // 既にログイン済み
+    if (user && user.emailVerified) {
+        // 既にログイン済み & メール確認済み
         window.location.href = '../index.html';
     }
 });
@@ -74,38 +74,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('ユーザーID:', userCredential.user.uid);
                 console.log('メールアドレス:', userCredential.user.email);
                 
-                // メール確認を送信
-                try {
-                    const actionCodeSettings = {
-                        url: window.location.origin + '/index.html',
-                        handleCodeInApp: false
-                    };
-                    
-                    await userCredential.user.sendEmailVerification(actionCodeSettings);
-                    
+                // 6桁の認証コードを生成
+                const verificationCode = generateVerificationCode();
+                
+                // 認証コードを保存してメール送信
+                const emailSent = await sendVerificationCode(email, verificationCode);
+                
+                if (emailSent) {
                     console.log('確認メール送信成功:', email);
+                    console.log('認証コード:', verificationCode); // 開発中のみログ出力
                     
+                    // アラートで認証コードを表示（開発中のみ - 本番環境では削除すること）
                     alert('アカウントが作成されました！\n\n' + 
                           '確認メールを ' + email + ' に送信しました。\n\n' +
-                          '【重要】\n' +
-                          '1. メールボックスを確認してください\n' +
-                          '2. 迷惑メールフォルダも確認してください\n' +
-                          '3. noreply@[your-project].firebaseapp.com からのメールを探してください\n' +
-                          '4. メール内のリンクをクリックしてアカウントを有効化してください\n\n' +
-                          'メールが届かない場合は、ログイン画面から再送信できます。');
+                          '【開発用】認証コード: ' + verificationCode + '\n\n' +
+                          '※本番環境ではこのコードは表示されず、メールでのみ送信されます。');
                     
-                } catch (emailError) {
-                    console.error('メール送信エラー:', emailError);
-                    alert('アカウントは作成されましたが、確認メールの送信に失敗しました。\n\n' +
-                          'エラー: ' + emailError.message + '\n\n' +
-                          'ログイン画面から再送信してください。');
+                    // 認証コード入力画面へリダイレクト
+                    window.location.href = '../verify-code.html?email=' + encodeURIComponent(email);
+                } else {
+                    throw new Error('確認メールの送信に失敗しました');
                 }
-                
-                // ログアウトして、メール確認を促す
-                await auth.signOut();
-                
-                // ログインページへリダイレクト
-                window.location.href = '../index.html';
                 
             } catch (error) {
                 console.error('新規登録エラー:', error);
@@ -128,36 +117,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 alert(errorMessage + ': ' + error.message);
+                
+                // エラーの場合はログアウト
+                await auth.signOut();
             }
         });
     }
 });
-
-// 手動でメール確認を送信するテスト関数
-async function manualSendVerificationEmail() {
-    const user = auth.currentUser;
-    
-    if (!user) {
-        alert('ログインしていません');
-        return;
-    }
-    
-    if (user.emailVerified) {
-        alert('このアカウントは既に確認済みです');
-        return;
-    }
-    
-    console.log('=== メール確認送信テスト ===');
-    console.log('ユーザーID:', user.uid);
-    console.log('メールアドレス:', user.email);
-    console.log('確認状態:', user.emailVerified);
-    
-    const success = await sendVerificationEmailWithLogging(user);
-    
-    if (success) {
-        alert('確認メールを送信しました。\n\n送信先: ' + user.email + '\n\nメールが届かない場合は、以下を確認してください：\n1. 迷惑メールフォルダ\n2. メールアドレスのスペルミス\n3. Firebase Consoleの設定');
-    }
-}
-
-// ブラウザのコンソールから手動でテストできるようにグローバルに公開
-window.testEmailVerification = manualSendVerificationEmail;

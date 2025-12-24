@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>メール認証 - 認証コード入力</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    
+    <style>
+        .verification-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #343541;
+            padding: 20px;
+        }
+        
+        .verification-box {
+            background-color: #202123;
+            padding: 40px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        
+        .verification-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, #10a37f 0%, #0d8c6f 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+        
+        .verification-box h1 {
+            text-align: center;
+            margin-bottom: 12px;
+            font-size: 28px;
+            color: #ececf1;
+        }
+        
+        .verification-subtitle {
+            text-align: center;
+            color: #c5c5d2;
+            margin-bottom: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .email-display {
+            color: #10a37f;
+            font-weight: 600;
+            margin-bottom: 32px;
+        }
+        
+        .code-input-container {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .code-digit {
+            width: 50px;
+            height: 60px;
+            font-size: 24px;
+            text-align: center;
+            background-color: #40414f;
+            border: 2px solid #565869;
+            border-radius: 8px;
+            color: #ececf1;
+            outline: none;
+            transition: all 0.2s;
+        }
+        
+        .code-digit:focus {
+            border-color: #10a37f;
+            box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.1);
+        }
+        
+        .code-digit.filled {
+            border-color: #10a37f;
+            background-color: #2a3f3a;
+        }
+        
+        .verify-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #10a37f 0%, #0d8c6f 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 16px;
+        }
+        
+        .verify-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 163, 127, 0.3);
+        }
+        
+        .verify-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .resend-link {
+            display: inline-block;
+            color: #10a37f;
+            text-decoration: none;
+            font-size: 14px;
+            margin-top: 16px;
+            cursor: pointer;
+        }
+        
+        .resend-link:hover {
+            text-decoration: underline;
+        }
+        
+        .error-message {
+            color: #ff6b6b;
+            font-size: 14px;
+            margin-top: 12px;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .success-message {
+            color: #10a37f;
+            font-size: 14px;
+            margin-top: 12px;
+            display: none;
+        }
+        
+        .success-message.show {
+            display: block;
+        }
+        
+        .timer {
+            color: #c5c5d2;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        
+        .loading-spinner {
+            display: none;
+            border: 3px solid #40414f;
+            border-top: 3px solid #10a37f;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-spinner.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="verification-container">
+        <div class="verification-box">
+            <div class="verification-icon">✉️</div>
+            
+            <h1>メールアドレスを確認</h1>
+            <p class="verification-subtitle">
+                以下のメールアドレスに送信された<br>
+                6桁の認証コードを入力してください
+            </p>
+            <p class="email-display" id="emailDisplay"></p>
+            
+            <div class="code-input-container">
+                <input type="text" class="code-digit" maxlength="1" id="digit1" inputmode="numeric" pattern="[0-9]">
+                <input type="text" class="code-digit" maxlength="1" id="digit2" inputmode="numeric" pattern="[0-9]">
+                <input type="text" class="code-digit" maxlength="1" id="digit3" inputmode="numeric" pattern="[0-9]">
+                <input type="text" class="code-digit" maxlength="1" id="digit4" inputmode="numeric" pattern="[0-9]">
+                <input type="text" class="code-digit" maxlength="1" id="digit5" inputmode="numeric" pattern="[0-9]">
+                <input type="text" class="code-digit" maxlength="1" id="digit6" inputmode="numeric" pattern="[0-9]">
+            </div>
+            
+            <button class="verify-btn" id="verifyBtn">認証する</button>
+            
+            <div class="loading-spinner" id="loadingSpinner"></div>
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+            
+            <div class="timer" id="timer">
+                コードの有効期限: <span id="timeRemaining">10:00</span>
+            </div>
+            
+            <a href="#" class="resend-link" id="resendLink">コードを再送信</a>
+            <br>
+            <a href="./index.html" class="resend-link" style="margin-top: 8px;">ログイン画面に戻る</a>
+        </div>
+    </div>
+    
+    <script src="./signup/firebase-config.js"></script>
+    <script>
+        // URLパラメータからメールアドレスを取得
+        const urlParams = new URLSearchParams(window.location.search);
+        const email = urlParams.get('email');
+        
+        if (!email) {
+            alert('メールアドレスが指定されていません');
+            window.location.href = './index.html';
+        }
+        
+        document.getElementById('emailDisplay').textContent = email;
+        
+        // 入力フィールドの参照
+        const digitInputs = [
+            document.getElementById('digit1'),
+            document.getElementById('digit2'),
+            document.getElementById('digit3'),
+            document.getElementById('digit4'),
+            document.getElementById('digit5'),
+            document.getElementById('digit6')
+        ];
+        
+        const verifyBtn = document.getElementById('verifyBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const resendLink = document.getElementById('resendLink');
+        
+        // 自動フォーカス移動
+        digitInputs.forEach((input, index) => {
+            input.addEventListener('input', (e) => {
+                // 数字以外を削除
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                
+                if (e.target.value) {
+                    e.target.classList.add('filled');
+                    // 次のフィールドに移動
+                    if (index < digitInputs.length - 1) {
+                        digitInputs[index + 1].focus();
+                    }
+                } else {
+                    e.target.classList.remove('filled');
+                }
+                
+                checkAllFilled();
+            });
+            
+            // バックスペースで前のフィールドに戻る
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && index > 0) {
+                    digitInputs[index - 1].focus();
+                }
+            });
+            
+            // ペースト対応
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const pasteData = e.clipboardData.getData('text').replace(/[^0-9]/g, '');
+                
+                for (let i = 0; i < pasteData.length && index + i < digitInputs.length; i++) {
+                    digitInputs[index + i].value = pasteData[i];
+                    digitInputs[index + i].classList.add('filled');
+                }
+                
+                if (index + pasteData.length < digitInputs.length) {
+                    digitInputs[index + pasteData.length].focus();
+                } else {
+                    digitInputs[digitInputs.length - 1].focus();
+                }
+                
+                checkAllFilled();
+            });
+        });
+        
+        // 全て入力されたかチェック
+        function checkAllFilled() {
+            const allFilled = digitInputs.every(input => input.value.length === 1);
+            verifyBtn.disabled = !allFilled;
+        }
+        
+        // 認証ボタンのクリックイベント
+        verifyBtn.addEventListener('click', async () => {
+            const code = digitInputs.map(input => input.value).join('');
+            
+            errorMessage.classList.remove('show');
+            successMessage.classList.remove('show');
+            loadingSpinner.classList.add('show');
+            verifyBtn.disabled = true;
+            
+            try {
+                // コードを検証
+                const result = verifyCode(email, code);
+                
+                if (result.valid) {
+                    // 成功
+                    successMessage.textContent = result.message;
+                    successMessage.classList.add('show');
+                    
+                    // 現在のユーザーをリロードしてメール確認状態を更新
+                    const user = auth.currentUser;
+                    if (user) {
+                        await user.reload();
+                        
+                        // 成功後、メインページへリダイレクト
+                        setTimeout(() => {
+                            window.location.href = './index.html';
+                        }, 1500);
+                    }
+                } else {
+                    // エラー
+                    errorMessage.textContent = result.message;
+                    errorMessage.classList.add('show');
+                    verifyBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error('認証エラー:', error);
+                errorMessage.textContent = '認証に失敗しました: ' + error.message;
+                errorMessage.classList.add('show');
+                verifyBtn.disabled = false;
+            } finally {
+                loadingSpinner.classList.remove('show');
+            }
+        });
+        
+        // コード再送信
+        resendLink.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            const user = auth.currentUser;
+            if (!user) {
+                alert('ログインしていません');
+                window.location.href = './index.html';
+                return;
+            }
+            
+            try {
+                // 新しいコードを生成
+                const newCode = generateVerificationCode();
+                const sent = await sendVerificationCode(email, newCode);
+                
+                if (sent) {
+                    alert('新しい認証コードを送信しました\n\n【開発用】コード: ' + newCode);
+                    
+                    // 入力フィールドをクリア
+                    digitInputs.forEach(input => {
+                        input.value = '';
+                        input.classList.remove('filled');
+                    });
+                    digitInputs[0].focus();
+                    
+                    // タイマーをリセット
+                    startTimer();
+                } else {
+                    alert('コードの再送信に失敗しました');
+                }
+            } catch (error) {
+                console.error('再送信エラー:', error);
+                alert('コードの再送信に失敗しました: ' + error.message);
+            }
+        });
+        
+        // タイマー機能
+        let timeLeft = 600; // 10分（秒）
+        const timerDisplay = document.getElementById('timeRemaining');
+        
+        function startTimer() {
+            timeLeft = 600;
+            updateTimerDisplay();
+            
+            const timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    errorMessage.textContent = '認証コードの有効期限が切れました。再送信してください。';
+                    errorMessage.classList.add('show');
+                    verifyBtn.disabled = true;
+                }
+            }, 1000);
+        }
+        
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // 初期フォーカス
+        digitInputs[0].focus();
+        
+        // タイマー開始
+        startTimer();
+    </script>
+</body>
+</html>

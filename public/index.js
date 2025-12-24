@@ -1441,3 +1441,52 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+const settingBtn = document.querySelector('.setting-btn');
+const settingModal = document.querySelector('.setting');
+const settingCross = document.querySelector(".cross")
+
+// 設定ボタンをクリックしたらモーダルを開く
+settingBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // イベントの伝播を止める
+    settingModal.classList.toggle('active');
+});
+
+// モーダルの外側（背景）をクリックしたら閉じる
+settingCross.addEventListener('click', (e) => {
+    // モーダルが表示されている場合のみチェック
+    console.log("settingModel",settingModal);
+    console.log("カカ閣下かかっかかか悪化悪化か");
+    settingModal.classList.remove('active');
+});
+
+// モーダル内をクリックしても閉じないようにする
+settingModal.addEventListener('click', (e) => {
+    e.stopPropagation();
+});
+
+
+// 設定タブの切り替え
+document.addEventListener('DOMContentLoaded', () => {
+    const settingTabs = document.querySelectorAll('.settingTab');
+    
+    settingTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // すべてのタブとコンテンツからactiveクラスを削除
+            settingTabs.forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // クリックされたタブにactiveクラスを追加
+            tab.classList.add('active');
+            
+            // 対応するコンテンツを表示
+            const tabName = tab.getAttribute('data-tab');
+            const content = document.getElementById(`${tabName}-content`);
+            if (content) {
+                content.classList.add('active');
+            }
+        });
+    });
+});

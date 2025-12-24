@@ -490,3 +490,89 @@ h1 {
 .sidebar-footer .card-body {
     opacity: 1;
 }
+
+/* 設定 */
+
+.setting {
+    position: fixed;
+    background-color: #cccdd3;
+    border-radius: 50px;
+    width: 800px;
+    height: 450px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);  /* これも必要！ */
+    z-index: 1000;  /* 他の要素より前面に表示 */
+    display: none;
+}
+
+.setting.active {
+    display: flex;
+}
+
+.setting-side {
+    background-color: #000000;
+    color: #cccdd3;
+    width: 100px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border-radius: 50px 0 0 50px;
+}
+
+.settingTab:hover {
+    background-color: #444654;
+}
+
+.setting-main {
+    flex: 1;
+    padding: 20px;
+    color: #000000;
+}
+
+.settingTab {
+    padding: 15px 0px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    text-align: center;
+    border-radius: 10px;
+}
+
+.settingTab:hover {
+    background-color: #444654;
+}
+
+.settingTab.active {
+    background-color: #565869;
+}
+
+.close-div {
+    background-color: #ffffff;
+    width: 100%;
+    height: 50px;
+    border-radius: 50px 0 0;
+}
+
+.cross {
+    background-color: transparent;
+    border: none;
+    font-size: 30px;
+    width: 30px;
+    height: 30px;
+}
+.cross:hover {
+    background-color: #343541;
+}
+/* タブコンテンツ */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.tab-content h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
