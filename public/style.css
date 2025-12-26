@@ -14,10 +14,14 @@ body {
     position: absolute;
     top: 0;
     left: 0;
-    width: 2000px;
-    height: 2000px;
+    width: 2000000px;
+    height: 2000000px;
     min-width: 100vw;
     min-height: 100vh;
+    background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.316) 4px, transparent 1px);
+    background-size: 60px 60px;
+    background-position: 0 0, 0 15px, 15px -15px, -15px 0;
 }
 
 h1 {
@@ -82,7 +86,7 @@ h1 {
     }
 }
 
-/* アニメーションなしの線（履歴復元時用） */
+/* アニメーションなしの線(履歴復元時用) */
 .line-no-animation {
     position: absolute;
     width: 3px;
@@ -91,7 +95,7 @@ h1 {
     z-index: 1;
 }
 
-/* アニメーションなしの円（履歴復元時用） */
+/* アニメーションなしの円(履歴復元時用) */
 .circle-no-animation {
     position: absolute;
     border-radius: 50%;
@@ -215,7 +219,8 @@ h1 {
     font-weight: 500;
 }
 
-.logout-btn, .setting-btn {
+.logout-btn,
+.setting-btn {
     background: none;
     border: none;
     color: #c5c5d2;
@@ -226,7 +231,8 @@ h1 {
     transition: color 0.2s;
 }
 
-.logout-btn:hover, .setting-btn:hover {
+.logout-btn:hover,
+.setting-btn:hover {
     color: #ff6b6b;
 }
 
@@ -455,16 +461,35 @@ h1 {
     width: 100px;
     height: 100px;
     border-radius: 50%;
-    background: skyblue;
+    background: rgb(126, 169, 213);
+    border: none;
+    /* デフォルトのボーダーを削除 */
     position: fixed;
     z-index: 1000;
     top: 87%;
     left: 88%;
+    transform: translate(-50%, -50%);
+    /* 中心を基準に配置 */
+    cursor: pointer;
+    /* クリック可能を示す */
     transition: background-color 0.5s ease;
 }
 
-.center-button:active{
+.center-button:active {
     background-color: rgb(7, 121, 165);
+}
+
+.center-button:hover {
+    background-color: rgb(100, 180, 220);
+    /* ホバー効果を追加 */
+}
+
+.center-button img {
+    width: 100%;
+    /* 画像サイズの調整 */
+    height: 100%;
+    object-fit: contain;
+    /* 画像の縦横比を維持 */
 }
 
 .card-content {
@@ -480,8 +505,9 @@ h1 {
 
 .card-body {
     display: flex;
-    flex-direction: column; 
-    gap: 8px;  /* ボタン間の間隔 */
+    flex-direction: column;
+    gap: 8px;
+    /* ボタン間の間隔 */
     padding: 2rem 2rem 0 2rem;
     opacity: 0;
     transition: all 0.4s ease 0.1s;
@@ -501,8 +527,10 @@ h1 {
     height: 450px;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);  /* これも必要！ */
-    z-index: 1000;  /* 他の要素より前面に表示 */
+    transform: translate(-50%, -50%);
+    /* これも必要! */
+    z-index: 1000;
+    /* 他の要素より前面に表示 */
     display: none;
 }
 
@@ -560,9 +588,11 @@ h1 {
     width: 30px;
     height: 30px;
 }
+
 .cross:hover {
     background-color: #343541;
 }
+
 /* タブコンテンツ */
 .tab-content {
     display: none;

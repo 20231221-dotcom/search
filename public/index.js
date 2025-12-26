@@ -1,6 +1,23 @@
 const searchInput = document.getElementById('searchInput');
 const searchbox = document.querySelector('.searchbox');
 const canvas = document.getElementById('canvas');
+// DOM要素の取得
+const sidebar = document.getElementById('sidebar');
+const chatHistoryContainer = document.getElementById('chatHistory');
+const newChatBtn = document.getElementById('newChatBtn');
+const toggleSidebarBtn = document.getElementById('toggleSidebar');
+let sidebarOpen = true;
+let currentChatId = null;
+let chatHistory = [];
+let viewportCenterX = window.innerWidth / 2;
+let viewportCenterY = window.innerHeight / 2;
+let focusCirclePosX = viewportCenterX - 1000000;
+let focusCirclePosY = viewportCenterY - 1000000;
+if (sidebarOpen == true) {
+    focusCirclePosX += 120
+    console.log("currentTranslateX", focusCirclePosX);
+}
+const body = document.body;
 
 // 円の位置を取得する関数 - 完全修正版
 function getCirclePosition(circle) {
@@ -620,7 +637,7 @@ function attachCircleClickHandler(circle, line, initialAngle, initialParentX, in
             setTimeout(() => {
                 updateExistingSmallCircles();
             }, 550);
-            
+
             setTimeout(() => {
                 const checkAndCreateSubCircles = () => {
                     const subKeywords = JSON.parse(clickedCircle.dataset.subKeywords || '[]');
@@ -635,8 +652,8 @@ function attachCircleClickHandler(circle, line, initialAngle, initialParentX, in
             }, 550);
         }, 300);
     });
-}  
-    
+}
+
 //サブキーワードの円を作成する関数
 function createSubCircles(parentCircle, parentX, parentY) {
     try {
@@ -838,6 +855,7 @@ async function fetchDescriptionAndKeywords(subKeyword, subCircle) {
 }
 
 canvas.style.transformOrigin = '0 0';
+console.log("おおおおお青々青々青々青々あおあ", focusCirclePosX, focusCirclePosY);
 
 let currentTranslateX = 0;
 let currentTranslateY = 0;
@@ -845,29 +863,34 @@ let currentScale = 1;
 
 window.addEventListener('wheel', function (e) {
     e.preventDefault();
+    const mouseX = e.clientX;
+    if (sidebarOpen == false || mouseX > 260) {
+        if (e.ctrlKey || e.metaKey) {
+            const zoomSpeed = 0.05;
+            const delta = e.deltaY > 0 ? -zoomSpeed : zoomSpeed;
+            const newScale = Math.max(0.1, Math.min(5, currentScale + delta));
 
-    if (e.ctrlKey || e.metaKey) {
-        const zoomSpeed = 0.05;
-        const delta = e.deltaY > 0 ? -zoomSpeed : zoomSpeed;
-        const newScale = Math.max(0.1, Math.min(5, currentScale + delta));
+            // マウス位置を取得
+            const mouseY = e.clientY;
 
-        const mouseX = e.clientX;
-        const mouseY = e.clientY;
+            // 現在のスケールでのキャンバス上のマウス位置を計算
+            const canvasX = (mouseX - currentTranslateX) / currentScale;
+            const canvasY = (mouseY - currentTranslateY) / currentScale;
 
-        const canvasX = (mouseX - currentTranslateX) / currentScale;
-        const canvasY = (mouseY - currentTranslateY) / currentScale;
+            // 新しいスケールでマウス位置が同じ場所に来るように移動量を調整
+            currentTranslateX = mouseX - canvasX * newScale;
+            currentTranslateY = mouseY - canvasY * newScale;
+            currentScale = newScale;
 
-        currentTranslateX = mouseX - canvasX * newScale;
-        currentTranslateY = mouseY - canvasY * newScale;
+            canvas.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+            updateBackground();
+        } else {
+            currentTranslateX -= e.deltaX;
+            currentTranslateY -= e.deltaY;
 
-        currentScale = newScale;
-
-        canvas.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
-    } else {
-        currentTranslateX -= e.deltaX;
-        currentTranslateY -= e.deltaY;
-
-        canvas.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+            canvas.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+            updateBackground();
+        }
     }
 }, { passive: false });
 
@@ -906,6 +929,7 @@ window.addEventListener('touchmove', function (e) {
         currentTranslateY += deltaY;
 
         canvas.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+        updateBackground();
 
         touchStartX = touchX;
         touchStartY = touchY;
@@ -918,21 +942,9 @@ window.addEventListener('touchmove', function (e) {
         currentScale = newScale;
 
         canvas.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+        updateBackground();
     }
 }, { passive: false });
-
-// DOM要素の取得
-const sidebar = document.getElementById('sidebar');
-const chatHistoryContainer = document.getElementById('chatHistory');
-const newChatBtn = document.getElementById('newChatBtn');
-const toggleSidebarBtn = document.getElementById('toggleSidebar');
-let sidebarOpen = true;
-let currentChatId = null;
-let chatHistory = [];
-const viewportCenterX = window.innerWidth / 2;
-const viewportCenterY = window.innerHeight / 2;
-let focusCirclePosX = viewportCenterX - 1000;
-let focusCirclePosY = viewportCenterY - 1000;
 
 // ローカルストレージからチャット履歴を読み込み
 function loadChatHistory() {
@@ -966,7 +978,14 @@ function init() {
     loadChatHistory();
     setupEventListeners();
     renderChatHistory();
-    
+
+    // 初期位置を設定
+    currentTranslateX = focusCirclePosX;
+    currentTranslateY = focusCirclePosY;
+    currentScale = 1;
+    canvas.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+    updateBackground(); // 初期背景を設定
+
     if (chatHistory.length === 0) {
         createNewChat();
     } else {
@@ -974,7 +993,6 @@ function init() {
         loadChat(currentChatId);
     }
 }
-
 // イベントリスナーの設定
 function setupEventListeners() {
     newChatBtn.addEventListener('click', createNewChat);
@@ -984,15 +1002,15 @@ function setupEventListeners() {
 // 現在のキャンバス状態を保存
 function saveCurrentCanvasState() {
     if (!currentChatId) return;
-    
+
     const chat = chatHistory.find(c => c.id === currentChatId);
     if (!chat) return;
-    
+
     const circles = Array.from(document.querySelectorAll('.keyword-circle, .new-circle, .circle-no-animation')).map(circle => {
         const computedStyle = window.getComputedStyle(circle);
         const actualWidth = computedStyle.width;
         const actualHeight = computedStyle.height;
-        
+
         let styleText = circle.style.cssText;
         if (!styleText.includes('width') && actualWidth && actualWidth !== '0px') {
             styleText += `width: ${actualWidth};`;
@@ -1000,36 +1018,36 @@ function saveCurrentCanvasState() {
         if (!styleText.includes('height') && actualHeight && actualHeight !== '0px') {
             styleText += `height: ${actualHeight};`;
         }
-        
+
         return {
             className: circle.className,
             style: styleText,
             innerHTML: circle.innerHTML,
-            dataset: {...circle.dataset}
+            dataset: { ...circle.dataset }
         };
     });
-    
+
     const lines = Array.from(document.querySelectorAll('.keyword-line, .line, .line-no-animation')).map(line => {
         const computedStyle = window.getComputedStyle(line);
         const actualHeight = computedStyle.height;
-        
+
         let styleText = line.style.cssText;
         if (!styleText.includes('height') && actualHeight && actualHeight !== '0px') {
             styleText += `height: ${actualHeight};`;
         }
-        
+
         return {
             className: line.className,
             style: styleText,
-            dataset: {...line.dataset}
+            dataset: { ...line.dataset }
         };
     });
-    
+
     const searchboxState = {
         innerHTML: searchbox.innerHTML,
         style: searchbox.style.cssText
     };
-    
+
     chat.canvasState = {
         circles,
         lines,
@@ -1040,23 +1058,24 @@ function saveCurrentCanvasState() {
             scale: currentScale
         }
     };
-    
+
     saveChatHistory();
 }
 
 // キャンバスをクリア
 function clearCanvas() {
     document.querySelectorAll('.keyword-circle, .new-circle, .circle-no-animation, .keyword-line, .line, .line-no-animation').forEach(el => el.remove());
-    
+
     searchbox.style.width = '300px';
     searchbox.style.height = '300px';
     searchbox.innerHTML = '<input type="text" id="searchInput">';
-    
+
     currentTranslateX = 0;
     currentTranslateY = 0;
     currentScale = 1;
     canvas.style.transform = `translate(0px, 0px) scale(1)`;
-    
+    updateBackground();
+
     const newSearchInput = document.getElementById('searchInput');
     if (newSearchInput) {
         setupSearchInputListener(newSearchInput);
@@ -1163,6 +1182,7 @@ function setupSearchInputListener(input) {
 
                     canvas.style.transition = 'transform 1s ease';
                     canvas.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+                    updateBackground();
 
                     setTimeout(function () {
                         canvas.style.transition = '';
@@ -1193,7 +1213,7 @@ function createNewChat() {
     if (currentChatId) {
         saveCurrentCanvasState();
     }
-    
+
     const chatId = generateId();
     const newChat = {
         id: chatId,
@@ -1201,13 +1221,13 @@ function createNewChat() {
         canvasState: null,
         createdAt: new Date().toISOString()
     };
-    
+
     chatHistory.unshift(newChat);
     currentChatId = chatId;
-    
+
     saveChatHistory();
     renderChatHistory();
-    
+
     clearCanvas();
 }
 
@@ -1216,18 +1236,18 @@ function loadChat(chatId) {
     if (currentChatId && currentChatId !== chatId) {
         saveCurrentCanvasState();
     }
-    
+
     currentChatId = chatId;
     const chat = chatHistory.find(c => c.id === chatId);
-    
+
     if (!chat) return;
-    
+
     clearCanvas();
-    
+
     if (chat.canvasState) {
         restoreCanvasState(chat.canvasState);
     }
-    
+
     renderChatHistory();
 }
 
@@ -1236,30 +1256,30 @@ function restoreCanvasState(state) {
     if (state.searchbox) {
         searchbox.innerHTML = state.searchbox.innerHTML;
         searchbox.style.cssText = state.searchbox.style;
-        
+
         const input = document.getElementById('searchInput');
         if (input) {
             setupSearchInputListener(input);
         }
     }
-    
+
     state.lines.forEach(lineData => {
         const line = document.createElement('div');
-        
+
         line.className = lineData.className;
         line.style.cssText = lineData.style;
         Object.keys(lineData.dataset).forEach(key => {
             line.dataset[key] = lineData.dataset[key];
         });
-        
+
         if (line.classList.contains('line')) {
             line.classList.remove('line');
             line.classList.add('line-no-animation');
         }
-        
+
         canvas.appendChild(line);
     });
-    
+
     state.circles.forEach(circleData => {
         const circle = document.createElement('div');
         circle.className = circleData.className;
@@ -1268,14 +1288,14 @@ function restoreCanvasState(state) {
         Object.keys(circleData.dataset).forEach(key => {
             circle.dataset[key] = circleData.dataset[key];
         });
-        
+
         if (circle.classList.contains('new-circle')) {
             circle.classList.remove('new-circle');
             circle.classList.add('circle-no-animation');
         }
-        
+
         canvas.appendChild(circle);
-        
+
         if (circle.classList.contains('keyword-circle')) {
             const lineId = circle.dataset.lineId;
             const line = document.querySelector(`[data-circle-id="${lineId}"]`);
@@ -1284,7 +1304,7 @@ function restoreCanvasState(state) {
             if (parentId && parentId !== 'root') {
                 parentCircle = document.querySelector(`[data-circle-id="${parentId}"]`);
             }
-            
+
             const pos = getCirclePosition(circle);
             let parentX = 0, parentY = 0;
             if (parentCircle) {
@@ -1295,34 +1315,35 @@ function restoreCanvasState(state) {
             const dx = pos.x - parentX;
             const dy = pos.y - parentY;
             const angle = Math.atan2(dy, dx);
-            
+
             attachCircleClickHandler(circle, line, angle, pos.x, pos.y, parentCircle);
         }
     });
-    
+
     if (state.transform) {
         currentTranslateX = state.transform.translateX;
         currentTranslateY = state.transform.translateY;
         currentScale = state.transform.scale;
         canvas.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+        updateBackground();
     }
 }
 
 // チャット履歴を表示
 function renderChatHistory() {
     chatHistoryContainer.innerHTML = '';
-    
+
     chatHistory.forEach(chat => {
         const chatItem = document.createElement('div');
         chatItem.className = 'chat-item';
         if (chat.id === currentChatId) {
             chatItem.classList.add('active');
         }
-        
+
         const titleSpan = document.createElement('span');
         titleSpan.className = 'chat-item-title';
         titleSpan.textContent = chat.title;
-        
+
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'chat-item-delete';
         deleteBtn.textContent = '×';
@@ -1330,14 +1351,14 @@ function renderChatHistory() {
             e.stopPropagation();
             deleteChat(chat.id);
         };
-        
+
         chatItem.appendChild(titleSpan);
         chatItem.appendChild(deleteBtn);
-        
+
         chatItem.onclick = () => {
             loadChat(chat.id);
         };
-        
+
         chatHistoryContainer.appendChild(chatItem);
     });
 }
@@ -1349,14 +1370,14 @@ function deleteChat(chatId) {
         createNewChat();
         return;
     }
-    
+
     if (!confirm('このチャットを削除しますか？')) {
         return;
     }
-    
+
     chatHistory = chatHistory.filter(c => c.id !== chatId);
     saveChatHistory();
-    
+
     if (currentChatId === chatId) {
         if (chatHistory.length > 0) {
             loadChat(chatHistory[0].id);
@@ -1370,16 +1391,24 @@ function deleteChat(chatId) {
 function toggleSidebar() {
     console.log("sidebar");
     sidebarOpen = !sidebarOpen;
-    
+
     if (sidebarOpen) {
         sidebar.classList.remove('hidden');
         toggleSidebarBtn.classList.add('sidebar-open');
         toggleSidebarBtn.classList.remove('sidebar-closed');
+        currentTranslateX += 130
+        focusCirclePosX += 130
+        updateBackground();
     } else {
         sidebar.classList.add('hidden');
         toggleSidebarBtn.classList.remove('sidebar-open');
         toggleSidebarBtn.classList.add('sidebar-closed');
+        currentTranslateX -= 130
+        focusCirclePosX -= 130
+        updateBackground();
     }
+    console.log(currentTranslateX);
+    canvas.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
 }
 
 toggleSidebarBtn.classList.add('sidebar-open');
@@ -1391,7 +1420,7 @@ init();
 const centerButton = document.querySelector('.center-button');
 console.log("centerButton", centerButton);
 
-centerButton.addEventListener("click", function(){
+centerButton.addEventListener("click", function () {
     focusMove()
 });
 
@@ -1400,20 +1429,21 @@ function focusMove() {
     currentTranslateX = focusCirclePosX;
     currentTranslateY = focusCirclePosY;
     currentScale = 1;
-    console.log("currentTranslateX",viewportCenterX,viewportCenterY);
-    
+    console.log("currentTranslateX", focusCirclePosX);
+
     // スムーズなアニメーション付きで移動
     canvas.style.transition = 'transform 0.5s ease';
     canvas.style.transform = `translate(${focusCirclePosX}px, ${focusCirclePosY}px) scale(${currentScale})`;
+    updateBackground();
 
-    console.log("キャンバスを中央にリセットしました", focusCirclePosX,focusCirclePosY);
+    console.log("キャンバスを中央にリセットしました", focusCirclePosX, focusCirclePosY);
     setTimeout(() => {
         canvas.style.transition = '';
     }, 500);
 }
 
 // カードの展開・折りたたみ機能（グローバルスコープに配置）
-window.toggleCard = function(header) {
+window.toggleCard = function (header) {
     const card = header.closest('.sidebar-footer');
     const wasActive = card.classList.contains('active');
     if (wasActive) {
@@ -1424,18 +1454,18 @@ window.toggleCard = function(header) {
 }
 
 // ページ読み込み時の初期化
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // キーボードアクセシビリティのサポート
     document.querySelectorAll('.card-header').forEach(header => {
         header.setAttribute('tabindex', '0');
         header.setAttribute('role', 'button');
         header.setAttribute('aria-expanded', 'false');
-        
-        header.addEventListener('keypress', function(e) {
+
+        header.addEventListener('keypress', function (e) {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 toggleCard(this);
-                this.setAttribute('aria-expanded', 
+                this.setAttribute('aria-expanded',
                     this.parentElement.classList.contains('active'));
             }
         });
@@ -1455,7 +1485,7 @@ settingBtn.addEventListener('click', (e) => {
 // モーダルの外側（背景）をクリックしたら閉じる
 settingCross.addEventListener('click', (e) => {
     // モーダルが表示されている場合のみチェック
-    console.log("settingModel",settingModal);
+    console.log("settingModel", settingModal);
     console.log("カカ閣下かかっかかか悪化悪化か");
     settingModal.classList.remove('active');
 });
@@ -1469,7 +1499,7 @@ settingModal.addEventListener('click', (e) => {
 // 設定タブの切り替え
 document.addEventListener('DOMContentLoaded', () => {
     const settingTabs = document.querySelectorAll('.settingTab');
-    
+
     settingTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             // すべてのタブとコンテンツからactiveクラスを削除
@@ -1477,10 +1507,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
             });
-            
+
             // クリックされたタブにactiveクラスを追加
             tab.classList.add('active');
-            
+
             // 対応するコンテンツを表示
             const tabName = tab.getAttribute('data-tab');
             const content = document.getElementById(`${tabName}-content`);
@@ -1490,3 +1520,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+// 背景を更新する関数（スケールも考慮）
+function updateBackground() {
+    // 背景のサイズもスケールに合わせて変更
+    const baseSize = 50; // 背景パターンの基本サイズ
+    const scaledSize = baseSize * currentScale;
+
+    body.style.backgroundPosition = `${currentTranslateX}px ${currentTranslateY}px`;
+    body.style.backgroundSize = `${scaledSize}px ${scaledSize}px`;
+}
+
+
+focusMove()
