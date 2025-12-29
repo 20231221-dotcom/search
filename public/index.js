@@ -6,18 +6,25 @@ const sidebar = document.getElementById('sidebar');
 const chatHistoryContainer = document.getElementById('chatHistory');
 const newChatBtn = document.getElementById('newChatBtn');
 const toggleSidebarBtn = document.getElementById('toggleSidebar');
+const searchChat = document.getElementById("searchChat")
+const searchChatDiv = document.querySelector('.searchchat-div');
+const searchChatInput = document.querySelector('.searchchat-div input');
+const searchItemsContainer = document.querySelector('.search-items');
 let sidebarOpen = true;
 let currentChatId = null;
 let chatHistory = [];
-let viewportCenterX = window.innerWidth / 2;
-let viewportCenterY = window.innerHeight / 2;
+let windowSizeX = window.innerWidth
+let windowSizeY = window.innerHeight
+const viewportCenterX = windowSizeX / 2;
+const viewportCenterY = windowSizeY / 2;
 let focusCirclePosX = viewportCenterX - 1000000;
 let focusCirclePosY = viewportCenterY - 1000000;
 if (sidebarOpen == true) {
-    focusCirclePosX += 120
+    focusCirclePosX += 130
     console.log("currentTranslateX", focusCirclePosX);
 }
 const body = document.body;
+canvas.classList.toggle('active');
 
 // 円の位置を取得する関数 - 完全修正版
 function getCirclePosition(circle) {
@@ -606,13 +613,6 @@ function attachCircleClickHandler(circle, line, initialAngle, initialParentX, in
             const finalX = parentX + newX;
             const finalY = parentY + newY;
 
-            console.log('Circle expansion:', {
-                parent: { x: parentX, y: parentY },
-                angle: angle * 180 / Math.PI,
-                offset: { x: newX, y: newY },
-                final: { x: finalX, y: finalY }
-            });
-
             clickedCircle.style.transition = 'left 0.5s ease, top 0.5s ease, width 0.5s ease, height 0.5s ease, background-color 0.5s ease';
             clickedCircle.style.left = `calc(50% + ${finalX}px)`;
             clickedCircle.style.top = `calc(50% + 300px + ${finalY}px)`;
@@ -621,11 +621,15 @@ function attachCircleClickHandler(circle, line, initialAngle, initialParentX, in
             clickedCircle.style.backgroundColor = '#ff69b4';
 
             const clickedPos = getCirclePosition(clickedCircle);
-            focusCirclePosX = -clickedPos.x - 689.5;
-            focusCirclePosY = -clickedPos.y - 750;
+            focusCirclePosX = -clickedPos.x + viewportCenterX - 1000000;
+            focusCirclePosY = -clickedPos.y - 100 - 1000000;
+            if (sidebarOpen == true) {
+                focusCirclePosX += 130
+                console.log("煮えて悔しいわ");
+            }
             setTimeout(() => {
                 focusMove()
-            }, 450);
+            }, 0); //要変更
 
             if (line) {
                 const extendedLength = Math.sqrt(newX * newX + newY * newY);
@@ -732,7 +736,7 @@ function createSubCircles(parentCircle, parentX, parentY) {
             if (subIndex === 2) {
                 subText = document.createElement('input');
                 subText.type = 'text';
-                subText.id = 'myTextBox';
+                // subText.id = 'myTextBox';
                 subText.name = 'username';
                 subText.placeholder = '名前を入力してください';
                 subText.className = 'form-input';
@@ -799,6 +803,11 @@ function createSubCircles(parentCircle, parentX, parentY) {
                 }, 300);
             }, subIndex * 100 + 500);
         });
+        // セーブのタイミングを変更
+        setTimeout(() => {
+            console.log("セーブはされました");
+            saveCurrentCanvasState();
+        }, subKeywords.length * 100 + 1000);
     } catch (error) {
         console.error('Error creating sub-circles:', error);
     }
@@ -832,7 +841,7 @@ async function fetchDescriptionAndKeywords(subKeyword, subCircle) {
             subCircle.dataset.description = description;
             subCircle.dataset.subKeywords = JSON.stringify(keywords);
 
-            console.log(`Saved data for: ${subKeyword}, keywords:`, keywords);
+            // console.log(`Saved data for: ${subKeyword}, keywords:`, keywords);
 
             if (subCircle.dataset.clicked === 'true') {
                 const descText = subCircle.querySelector('p');
@@ -855,14 +864,13 @@ async function fetchDescriptionAndKeywords(subKeyword, subCircle) {
 }
 
 canvas.style.transformOrigin = '0 0';
-console.log("おおおおお青々青々青々青々あおあ", focusCirclePosX, focusCirclePosY);
 
 let currentTranslateX = 0;
 let currentTranslateY = 0;
 let currentScale = 1;
 
 window.addEventListener('wheel', function (e) {
-    e.preventDefault();
+    // e.preventDefault();　　　まだ使うかもしれない
     const mouseX = e.clientX;
     if (sidebarOpen == false || mouseX > 260) {
         if (e.ctrlKey || e.metaKey) {
@@ -916,7 +924,7 @@ window.addEventListener('touchstart', function (e) {
 window.addEventListener('touchmove', function (e) {
     if (e.target.tagName === 'INPUT') return;
 
-    e.preventDefault();
+    // e.preventDefault(); まだ使うかもしれない
 
     if (e.touches.length === 1) {
         const touchX = e.touches[0].clientX;
@@ -1048,6 +1056,10 @@ function saveCurrentCanvasState() {
         style: searchbox.style.cssText
     };
 
+    const saveFocusX = focusCirclePosX - windowSizeX / 2
+    const saveFocusY = focusCirclePosY - windowSizeY / 2
+    console.log("saveX", focusCirclePosX, viewportCenterX, saveFocusX);
+
     chat.canvasState = {
         circles,
         lines,
@@ -1056,12 +1068,16 @@ function saveCurrentCanvasState() {
             translateX: currentTranslateX,
             translateY: currentTranslateY,
             scale: currentScale
+        },
+        // フォーカス位置を追加
+        focusPosition: {
+            x: saveFocusX,
+            y: saveFocusY
         }
     };
 
     saveChatHistory();
 }
-
 // キャンバスをクリア
 function clearCanvas() {
     document.querySelectorAll('.keyword-circle, .new-circle, .circle-no-animation, .keyword-line, .line, .line-no-animation').forEach(el => el.remove());
@@ -1178,10 +1194,9 @@ function setupSearchInputListener(input) {
                 }, 1500);
 
                 setTimeout(function () {
-                    currentTranslateY -= 300;
+                    focusCirclePosY -= 300
 
-                    canvas.style.transition = 'transform 1s ease';
-                    canvas.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+                    focusMove()
                     updateBackground();
 
                     setTimeout(function () {
@@ -1229,6 +1244,15 @@ function createNewChat() {
     renderChatHistory();
 
     clearCanvas();
+
+    // フォーカス位置を初期値にリセット
+    focusCirclePosX = viewportCenterX - 1000000;
+    focusCirclePosY = viewportCenterY - 1000000;
+    if (sidebarOpen) {
+        focusCirclePosX += 130;
+    }
+    canvas.style.transform = `translate(${focusCirclePosX}px, ${focusCirclePosY}px) scale(1)`;
+
 }
 
 // チャットを読み込み
@@ -1253,6 +1277,7 @@ function loadChat(chatId) {
 
 // キャンバス状態を復元
 function restoreCanvasState(state) {
+    console.log("復元するデータ:", state);
     if (state.searchbox) {
         searchbox.innerHTML = state.searchbox.innerHTML;
         searchbox.style.cssText = state.searchbox.style;
@@ -1280,6 +1305,7 @@ function restoreCanvasState(state) {
         canvas.appendChild(line);
     });
 
+    // ステップ1: すべての円をDOMに追加
     state.circles.forEach(circleData => {
         const circle = document.createElement('div');
         circle.className = circleData.className;
@@ -1295,12 +1321,18 @@ function restoreCanvasState(state) {
         }
 
         canvas.appendChild(circle);
+    });
 
-        if (circle.classList.contains('keyword-circle')) {
+    // ステップ2: すべての円がDOMに追加された後、イベントをアタッチ
+    state.circles.forEach(circleData => {
+        const circle = document.querySelector(`[data-circle-id="${circleData.dataset.circleId}"]`);
+
+        if (circle && circle.classList.contains('keyword-circle')) {
             const lineId = circle.dataset.lineId;
             const line = document.querySelector(`[data-circle-id="${lineId}"]`);
             const parentId = circle.dataset.parentId;
             let parentCircle = null;
+
             if (parentId && parentId !== 'root') {
                 parentCircle = document.querySelector(`[data-circle-id="${parentId}"]`);
             }
@@ -1320,12 +1352,16 @@ function restoreCanvasState(state) {
         }
     });
 
-    if (state.transform) {
-        currentTranslateX = state.transform.translateX;
-        currentTranslateY = state.transform.translateY;
-        currentScale = state.transform.scale;
-        canvas.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+    // フォーカス位置を復元
+    if (state.focusPosition) {
+        focusCirclePosX = state.focusPosition.x + windowSizeX / 2;
+        console.log("focusposi", state.focusPosition.x, viewportCenterX, focusCirclePosX);
+        focusCirclePosY = state.focusPosition.y + windowSizeY / 2;
+        currentTranslateX = focusCirclePosX
+        currentTranslateY = focusCirclePosY
+        canvas.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(1)`;
         updateBackground();
+        console.log("フォーカス位置を復元:", focusCirclePosX, focusCirclePosY);
     }
 }
 
@@ -1357,6 +1393,10 @@ function renderChatHistory() {
 
         chatItem.onclick = () => {
             loadChat(chat.id);
+            console.log("aaaaaaaaaa");
+            searchChatDiv.classList.remove('active');
+            canvas.style.transition = 'transform 0s ease';
+            canvas.style.transform = `translate(${focusCirclePosX}px, ${focusCirclePosY}px) scale(${currentScale})`;
         };
 
         chatHistoryContainer.appendChild(chatItem);
@@ -1368,7 +1408,6 @@ function deleteChat(chatId) {
     if (chatHistory.length === 1) {
         alert('新しいチャットを作成します');
         createNewChat();
-        return;
     }
 
     if (!confirm('このチャットを削除しますか？')) {
@@ -1398,6 +1437,7 @@ function toggleSidebar() {
         toggleSidebarBtn.classList.remove('sidebar-closed');
         currentTranslateX += 130
         focusCirclePosX += 130
+        searchChatDiv.style.width = "calc(100% - 260px)" 
         updateBackground();
     } else {
         sidebar.classList.add('hidden');
@@ -1405,6 +1445,7 @@ function toggleSidebar() {
         toggleSidebarBtn.classList.add('sidebar-closed');
         currentTranslateX -= 130
         focusCirclePosX -= 130
+        searchChatDiv.style.width = "100%" 
         updateBackground();
     }
     console.log(currentTranslateX);
@@ -1430,6 +1471,7 @@ function focusMove() {
     currentTranslateY = focusCirclePosY;
     currentScale = 1;
     console.log("currentTranslateX", focusCirclePosX);
+
 
     // スムーズなアニメーション付きで移動
     canvas.style.transition = 'transform 0.5s ease';
@@ -1532,4 +1574,95 @@ function updateBackground() {
 }
 
 
+// 画面サイズの変更
+window.addEventListener("resize", () => {
+    let differenceX = windowSizeX - window.innerWidth
+    let differenceY = windowSizeY - window.innerHeight
+    currentTranslateX -= differenceX / 2
+    currentTranslateY -= differenceY / 2
+    focusCirclePosX -= differenceX / 2
+    focusCirclePosY -= differenceY / 2
+    updateBackground();
+    windowSizeX = window.innerWidth
+    windowSizeY = window.innerHeight
+
+    canvas.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+
+    console.log("大きさが変わってるよ", windowSizeX, windowSizeY);
+})
+
 focusMove()
+
+searchChat.addEventListener("click", () => {
+    console.log("押された");
+    searchChatDiv.classList.toggle('active');
+    if (searchChatDiv.classList.contains('active')) {
+        searchChatInput.focus();
+        renderSearchResults('');
+        if (sidebarOpen == true) {
+            searchChatDiv.style.width = "calc(100% - 260px)" 
+            console.log("成功はしているみたい");
+        }
+    }
+});
+
+// 検索入力のイベントリスナー
+searchChatInput.addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase();
+    renderSearchResults(query);
+});
+
+// 検索結果を表示
+function renderSearchResults(query) {
+    searchItemsContainer.innerHTML = '';
+
+    const filteredChats = chatHistory.filter(chat => {
+        return chat.title.toLowerCase().includes(query);
+    });
+
+    if (filteredChats.length === 0) {
+        const noResults = document.createElement('div');
+        noResults.className = 'search-no-results';
+        noResults.textContent = '検索結果がありません';
+        searchItemsContainer.appendChild(noResults);
+        return;
+    }
+
+    filteredChats.forEach(chat => {
+        const searchItem = document.createElement('div');
+        searchItem.className = 'search-item';
+        if (chat.id === currentChatId) {
+            searchItem.classList.add('active');
+        }
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'search-item-title';
+        titleSpan.textContent = chat.title;
+
+        const dateSpan = document.createElement('span');
+        dateSpan.className = 'search-item-date';
+        const date = new Date(chat.createdAt);
+        dateSpan.textContent = date.toLocaleDateString('ja-JP');
+
+        searchItem.appendChild(titleSpan);
+        searchItem.appendChild(dateSpan);
+
+        searchItem.onclick = () => {
+            loadChat(chat.id);
+            searchChatDiv.classList.remove('active');
+            searchChatInput.value = '';
+        };
+
+        searchItemsContainer.appendChild(searchItem);
+    });
+}
+
+// 検索ボックス外をクリックで閉じる
+// document.addEventListener('click', (e) => {
+//     if (searchChatDiv.classList.contains('active')) {
+//         if (!searchChatDiv.contains(e.target) && e.target !== searchChat) {
+//             searchChatDiv.classList.remove('active');
+//             searchChatInput.value = '';
+//         }
+//     }
+// });

@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link rel="stylesheet" href="style.css">
-
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 </head>
+
 <body>
 
 
@@ -18,25 +20,25 @@
         <div class="login-box">
             <h1>ChatGPT風インターフェース</h1>
             <p class="login-subtitle">ログインして始めましょう</p>
-            
+
             <div class="login-methods">
                 <button class="login-btn google-btn" id="googleLoginBtn">
                     <span class="btn-icon">G</span>
                     Googleでログイン
                 </button>
-                
+
                 <div class="divider">
                     <span>または</span>
                 </div>
-                
+
                 <form id="emailLoginForm" class="email-form">
                     <input type="email" id="emailInput" placeholder="メールアドレス" required />
                     <input type="password" id="passwordInput" placeholder="パスワード" required />
                     <button type="submit" class="login-btn email-btn">ログイン</button>
                 </form>
-                
+
                 <p class="signup-link">
-                    アカウントをお持ちでないですか？ 
+                    アカウントをお持ちでないですか？
                     <a href="./signup/signup.html" id="showSignupLink">新規登録</a>
                 </p>
             </div>
@@ -53,23 +55,39 @@
         <!-- サイドバー -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <button class="new-chat-btn" id="newChatBtn">
+                <button class="sidebar-button" id="newChatBtn">
                     <span class="icon">+</span>
                     新しいチャット
                 </button>
+                <button class="sidebar-button"  id="searchChat">
+                    <span class="material-symbols-outlined">
+                        search
+                    </span>
+                    検索
+                </button>
+                <button class="sidebar-button">
+                    <span class="material-symbols-outlined">
+                        folder
+                    </span>
+                    プロジェクト
+                </button>
             </div>
-            
+
+
+
+
+
             <div class="chat-history" id="chatHistory">
                 <!-- チャット履歴がここに動的に追加されます -->
             </div>
-            
+
             <div class="sidebar-footer">
-                    <div class="card-content">
-                        <div class="card-body">
-                            <button class="logout-btn" id="logoutBtn">ログアウト</button> 
-                            <button class="setting-btn">設定</button> 
-                        </div>
+                <div class="card-content">
+                    <div class="card-body">
+                        <button class="logout-btn" id="logoutBtn">ログアウト</button>
+                        <button class="setting-btn">設定</button>
                     </div>
+                </div>
                 <div class="user-profile" id="userProfile">
                     <div class="avatar" id="userAvatar">U</div>
                     <div class="user-info" onclick="toggleCard(this)">
@@ -82,7 +100,7 @@
         <div class="setting">
             <aside class="setting-side">
                 <div class="close-div">
-                    <button class="cross">×</button>
+                    <button class="cross"><span class="material-symbols-outlined">close</span></button>
                 </div>
                 <div class="settingTab active" data-tab="general">一般</div>
                 <div class="settingTab" data-tab="other">その他</div>
@@ -112,7 +130,7 @@
                         </label>
                     </div>
                 </div>
-                
+
                 <!-- その他の設定のコンテンツ -->
                 <div class="tab-content" id="other-content">
                     <h2>その他の設定</h2>
@@ -126,8 +144,15 @@
                     </div>
                     <div class="setting-item">
                         <button class="export-btn">データをエクスポート</button>
-                   </div>
+                    </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="searchchat-div">
+            <input type="text">
+            <div class="search-items">
+
             </div>
         </div>
 
@@ -137,22 +162,25 @@
         <main class="main-content">
 
             <div class="toggle-sidebar" id="toggleSidebar">
-                <span class="hamburger">☰</span>
+                <span class="material-symbols-outlined">
+                    menu
+                </span>
             </div>
-   
-           <!-- キャンバス（ドラッグ可能なエリア） -->
-           <div id="canvas">
-               <div class="searchbox">
-                   <input type="text" id="searchInput">
-               </div>
-           </div>
-           <button class="center-button">
-               <img src="../source/center.png" alt="Center">
-           </button>
+
+            <!-- キャンバス（ドラッグ可能なエリア） -->
+            <div id="canvas">
+                <div class="searchbox">
+                    <input type="text" id="searchInput">
+                </div>
+            </div>
+            <button class="center-button">
+                <img src="../source/center.png" alt="↑">
+            </button>
         </main>
 
 
-   <script src="./signup/firebase-config.js"></script>
-   <script src="index.js"></script>
+        <script src="./signup/firebase-config.js"></script>
+        <script src="index.js"></script>
 </body>
+
 </html>
